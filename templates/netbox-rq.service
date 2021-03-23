@@ -1,0 +1,23 @@
+# {{ ansible_managed }}
+
+[Unit]
+Description=NetBox Request Queue Worker
+Documentation=https://netbox.readthedocs.io/en/stable/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User={{ netbox_user }}
+Group={{ netbox_group }}
+WorkingDirectory={{ netbox_root }}/netbox
+
+ExecStart={{ netbox_root }}/netbox/venv/bin/python3 {{ netbox_root }}/netbox/netbox/manage.py rqworker
+
+Restart=on-failure
+RestartSec=30
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+---
+- name: restart netbox
+  ansible.builtin.service:
+    name: netbox
+    state: restarted
+
+- name: restart netbox-rq
+  ansible.builtin.service:
+    name: netbox-rq
+    state: restarted

@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+
+[Unit]
+Description="NetBox Housekeeping"
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service netbox-housekeeping.timer
+
+[Service]
+Type=oneshot
+User={{ netbox_user }}
+Group={{ netbox_group }}
+ExecStart={{ netbox_root }}/netbox/netbox-housekeeping.sh

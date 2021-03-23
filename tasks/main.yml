@@ -1,0 +1,3 @@
+---
+- ansible.builtin.import_tasks: postgresql.yml
+- ansible.builtin.import_tasks: netbox.yml

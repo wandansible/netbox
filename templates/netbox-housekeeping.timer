@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+
+[Unit]
+Description="NetBox Housekeeping {{ netbox_housekeeping_time }}"
+
+[Timer]
+Unit=netbox-housekeeping.service
+OnCalendar={{ netbox_housekeeping_time }}
+AccuracySec=1m
+
+[Install]
+WantedBy=timers.target

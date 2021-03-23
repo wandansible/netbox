@@ -1,0 +1,24 @@
+# {{ ansible_managed }}
+
+[Unit]
+Description=NetBox WSGI Service
+Documentation=https://netbox.readthedocs.io/en/stable/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User={{ netbox_user }}
+Group={{ netbox_group }}
+PIDFile=/var/tmp/netbox.pid
+WorkingDirectory={{ netbox_root }}/netbox
+
+ExecStart={{ netbox_root }}/netbox/venv/bin/gunicorn --pid /var/tmp/netbox.pid --pythonpath {{ netbox_root }}/netbox/netbox --config {{ netbox_root }}/netbox/gunicorn.py netbox.wsgi
+
+Restart=on-failure
+RestartSec=30
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

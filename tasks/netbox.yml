@@ -1,0 +1,325 @@
+---
+- name: Create netbox top-level directory
+  ansible.builtin.file:
+    path: "{{ netbox_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+
+- name: Install packages required for netbox
+  ansible.builtin.apt:
+    name: "{{ netbox_packages }}"
+    state: present
+
+- name: Download netbox archive
+  ansible.builtin.get_url:
+    url: https://github.com/netbox-community/netbox/archive/v{{ netbox_version }}.tar.gz
+    dest: "{{ netbox_root }}/v{{ netbox_version }}.tar.gz"
+    checksum: "{{ netbox_checksum_type }}:{{ netbox_checksum }}"
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+
+- name: Extract netbox package
+  ansible.builtin.unarchive:
+    src: "{{ netbox_root }}/v{{ netbox_version }}.tar.gz"
+    remote_src: true
+    dest: "{{ netbox_root }}"
+    creates: "{{ netbox_root }}/netbox-{{ netbox_version }}"
+    owner: root
+    group: root
+
+- name: Create symlink for netbox version
+  ansible.builtin.file:
+    src: "{{ netbox_root }}/netbox-{{ netbox_version }}"
+    path: "{{ netbox_root }}/netbox"
+    owner: root
+    group: root
+    state: link
+  notify:
+    - restart netbox
+    - restart netbox-rq
+  register: _netbox_current_version
+
+- name: Create netbox system group
+  ansible.builtin.group:
+    name: "{{ netbox_group }}"
+    system: true
+    state: present
+
+- name: Create netbox system user
+  ansible.builtin.user:
+    name: "{{ netbox_user }}"
+    group: "{{ netbox_group }}"
+    home: "{{ netbox_root }}/netbox"
+    create_home: false
+    shell: /usr/sbin/nologin
+    system: true
+    state: present
+
+- name: Create netbox media directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ netbox_user }}"
+    group: "{{ netbox_group }}"
+    mode: "u=rwx,g=rwx,o=rx"
+    state: directory
+  loop:
+    - "{{ netbox_media_root }}"
+    - "{{ netbox_media_root }}/devicetype-images"
+    - "{{ netbox_media_root }}/image-attachments"
+
+- name: Create netbox directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: u=rwx,g=rwx,o=rx
+    state: directory
+  loop:
+    - "{{ netbox_reports_root }}"
+    - "{{ netbox_scripts_root }}"
+
+- name: Deploy netbox reports
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "{{ netbox_reports_root }}/{{ item | basename }}"
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  loop: "{{ netbox_reports }}"
+
+- name: Deploy netbox scripts
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "{{ netbox_scripts_root }}/{{ item | basename }}"
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  loop: "{{ netbox_scripts }}"
+
+- name: Create netbox python virtual environment
+  ansible.builtin.file:
+    path: "{{ netbox_root }}/netbox/venv"
+    state: directory
+    owner: nobody
+    group: nogroup
+    mode: u=rwx,g=rx,o=rx
+  register: _netbox_venv
+
+- name: Create netbox python virtual environment
+  ansible.builtin.pip:
+    name: "{{ netbox_venv_python_packages }}"
+    virtualenv: "{{ netbox_root }}/netbox/venv"
+    virtualenv_command: /usr/bin/python3 -m venv
+    state: latest
+  when:
+    - _netbox_venv.diff.before.state is defined
+    - _netbox_venv.diff.before.state == "absent"
+  become: true
+  become_user: nobody
+  vars:
+    ansible_ssh_pipelining: true
+
+- name: Install netbox python requirements
+  ansible.builtin.pip:
+    requirements: "{{ netbox_root }}/netbox/requirements.txt"
+    virtualenv: "{{ netbox_root }}/netbox/venv"
+  become: true
+  become_user: nobody
+  vars:
+    ansible_ssh_pipelining: true
+
+- name: Configure netbox
+  ansible.builtin.template:
+    src: configuration.py
+    dest: "{{ netbox_root }}/netbox/netbox/netbox/configuration.py"
+    owner: root
+    group: netbox
+    mode: u=rw,g=r,o=
+  no_log: true
+  notify:
+    - restart netbox
+    - restart netbox-rq
+
+- name: Netbox LDAP configuration block
+  when: netbox_ldap_enabled
+  block:
+    - name: Install packages required for netbox LDAP
+      ansible.builtin.apt:
+        name: "{{ netbox_ldap_packages }}"
+        state: present
+
+    - name: Add netbox ldap python packages to local requirements
+      ansible.builtin.lineinfile:
+        line: "{{ item }}"
+        path: "{{ netbox_root }}/netbox/local_requirements.txt"
+        create: true
+        owner: root
+        group: root
+        mode: u=rw,g=r,o=r
+        state: present
+      loop: "{{ netbox_ldap_python_packages }}"
+
+    - name: Install python packages for netbox LDAP
+      ansible.builtin.pip:
+        name: "{{ netbox_ldap_python_packages }}"
+        virtualenv: "{{ netbox_root }}/netbox/venv"
+        state: present
+      become: true
+      become_user: nobody
+      vars:
+        ansible_ssh_pipelining: true
+
+    - name: Configure netbox LDAP
+      ansible.builtin.template:
+        src: "{{ netbox_ldap_template }}"
+        dest: "{{ netbox_root }}/netbox/netbox/netbox/ldap_config.py"
+        owner: root
+        group: netbox
+        mode: u=rw,g=r,o=
+      no_log: true
+      notify:
+        - restart netbox
+        - restart netbox-rq
+
+- name: Netbox NAPALM configuration block
+  when: netbox_napalm_enabled
+  block:
+    - name: Add netbox NAPALM python packages to local requirements
+      ansible.builtin.lineinfile:
+        line: "{{ item }}"
+        path: "{{ netbox_root }}/netbox/local_requirements.txt"
+        create: true
+        owner: root
+        group: root
+        mode: u=rw,g=r,o=r
+        state: present
+      loop: "{{ netbox_napalm_python_packages }}"
+
+    - name: Install python packages for netbox NAPALM
+      ansible.builtin.pip:
+        name: "{{ netbox_napalm_python_packages }}"
+        virtualenv: "{{ netbox_root }}/netbox/venv"
+        state: present
+      become: true
+      become_user: nobody
+      vars:
+        ansible_ssh_pipelining: true
+
+- name: Netbox upgrade block
+  when: _netbox_current_version.changed
+  block:
+    - name: Apply any netbox database migrations
+      community.general.django_manage:
+        app_path: "{{ netbox_root }}/netbox/netbox"
+        virtualenv: "{{ netbox_root }}/netbox/venv"
+        command: migrate
+      become: true
+      become_user: "{{ netbox_user }}"
+      vars:
+        ansible_ssh_pipelining: true
+
+    - name: Trace any missing netbox cable paths
+      community.general.django_manage:
+        app_path: "{{ netbox_root }}/netbox/netbox"
+        virtualenv: "{{ netbox_root }}/netbox/venv"
+        command: trace_paths --no-input
+      become: true
+      become_user: "{{ netbox_user }}"
+      vars:
+        ansible_ssh_pipelining: true
+
+    - name: Build local netbox documentation
+      ansible.builtin.command:
+        cmd: "{{ netbox_root }}/netbox/venv/bin/mkdocs build"
+        chdir: "{{ netbox_root }}/netbox"
+
+    - name: Collect netbox static files
+      community.general.django_manage:
+        app_path: "{{ netbox_root }}/netbox/netbox"
+        virtualenv: "{{ netbox_root }}/netbox/venv"
+        command: collectstatic
+
+    - name: Remove stale content types from netbox database
+      community.general.django_manage:
+        app_path: "{{ netbox_root }}/netbox/netbox"
+        virtualenv: "{{ netbox_root }}/netbox/venv"
+        command: remove_stale_contenttypes --no-input
+      become: true
+      become_user: "{{ netbox_user }}"
+      vars:
+        ansible_ssh_pipelining: true
+
+    - name: Clear all expired user sessions from netbox database
+      community.general.django_manage:
+        app_path: "{{ netbox_root }}/netbox/netbox"
+        virtualenv: "{{ netbox_root }}/netbox/venv"
+        command: clearsessions
+      become: true
+      become_user: "{{ netbox_user }}"
+      vars:
+        ansible_ssh_pipelining: true
+
+- name: Configure gunicorn
+  ansible.builtin.template:
+    src: gunicorn.py
+    dest: "{{ netbox_root }}/netbox/gunicorn.py"
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  notify:
+    - restart netbox
+    - restart netbox-rq
+
+- name: Create netbox service
+  ansible.builtin.template:
+    src: netbox.service
+    dest: /etc/systemd/system/netbox.service
+  notify:
+    - restart netbox
+
+- name: Create netbox-rq service
+  ansible.builtin.template:
+    src: netbox-rq.service
+    dest: /etc/systemd/system/netbox-rq.service
+  notify:
+    - restart netbox-rq
+
+- name: Ensure netbox services are started and enabled
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    daemon_reload: true
+    state: started
+    enabled: true
+  loop:
+    - netbox
+    - netbox-rq
+
+- name: Add netbox housekeeping executable
+  ansible.builtin.copy:
+    src: "{{ netbox_root }}/netbox/contrib/netbox-housekeeping.sh"
+    remote_src: true
+    dest: "{{ netbox_root }}/netbox/netbox-housekeeping.sh"
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+
+- name: Create netbox housekeeping systemd units
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: /etc/systemd/system/{{ item }}
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  loop:
+    - netbox-housekeeping.timer
+    - netbox-housekeeping.service
+
+- name: Start and enable netbox housekeeping systemd timer
+  ansible.builtin.systemd:
+    name: netbox-housekeeping.timer
+    daemon_reload: true
+    state: started
+    enabled: true
