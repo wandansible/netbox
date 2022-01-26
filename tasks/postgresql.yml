@@ -4,8 +4,6 @@
     name: "{{ netbox_database }}"
   become: true
   become_user: "{{ postgresql_user }}"
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: Revoke PUBLIC permissions on netbox postgresql database
   community.postgresql.postgresql_privs:
@@ -16,8 +14,6 @@
     state: absent
   become: yes
   become_user: "{{ postgresql_user }}"
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: Revoke PUBLIC permissions for public schema on netbox postgresql database
   community.postgresql.postgresql_privs:
@@ -29,8 +25,6 @@
     state: absent
   become: yes
   become_user: "{{ postgresql_user }}"
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: Create netbox postgresql user
   community.postgresql.postgresql_user:
@@ -40,8 +34,6 @@
   no_log: true
   become: true
   become_user: "{{ postgresql_user }}"
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: Grant all to netbox postgresql database for netbox user
   community.postgresql.postgresql_privs:
@@ -52,8 +44,6 @@
     privs: ALL
   become: true
   become_user: "{{ postgresql_user }}"
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: Grant all to public schema for netbox postgresql user
   community.postgresql.postgresql_privs:
@@ -64,5 +54,3 @@
     privs: ALL
   become: yes
   become_user: "{{ postgresql_user }}"
-  vars:
-    ansible_ssh_pipelining: true
