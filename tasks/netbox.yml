@@ -119,8 +119,6 @@
     - _netbox_venv.diff.before.state == "absent"
   become: true
   become_user: nobody
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: Install netbox python requirements
   ansible.builtin.pip:
@@ -128,8 +126,6 @@
     virtualenv: "{{ netbox_root }}/netbox/venv"
   become: true
   become_user: nobody
-  vars:
-    ansible_ssh_pipelining: true
 
 - name: Configure netbox
   ansible.builtin.template:
@@ -169,8 +165,6 @@
         state: present
       become: true
       become_user: nobody
-      vars:
-        ansible_ssh_pipelining: true
 
     - name: Configure netbox LDAP
       ansible.builtin.template:
@@ -205,8 +199,6 @@
         state: present
       become: true
       become_user: nobody
-      vars:
-        ansible_ssh_pipelining: true
 
 - name: Netbox upgrade block
   when: _netbox_current_version.changed
@@ -218,8 +210,6 @@
         command: migrate
       become: true
       become_user: "{{ netbox_user }}"
-      vars:
-        ansible_ssh_pipelining: true
 
     - name: Trace any missing netbox cable paths
       community.general.django_manage:
@@ -228,8 +218,6 @@
         command: trace_paths --no-input
       become: true
       become_user: "{{ netbox_user }}"
-      vars:
-        ansible_ssh_pipelining: true
 
     - name: Build local netbox documentation
       ansible.builtin.command:
@@ -249,8 +237,6 @@
         command: remove_stale_contenttypes --no-input
       become: true
       become_user: "{{ netbox_user }}"
-      vars:
-        ansible_ssh_pipelining: true
 
     - name: Clear all expired user sessions from netbox database
       community.general.django_manage:
@@ -259,8 +245,6 @@
         command: clearsessions
       become: true
       become_user: "{{ netbox_user }}"
-      vars:
-        ansible_ssh_pipelining: true
 
 - name: Configure gunicorn
   ansible.builtin.template:
