@@ -108,7 +108,7 @@
     mode: u=rwx,g=rx,o=rx
   register: _netbox_venv
 
-- name: Create netbox python virtual environment
+- name: Create netbox python virtual environment  # noqa package-latest
   ansible.builtin.pip:
     name: "{{ netbox_venv_python_packages }}"
     virtualenv: "{{ netbox_root }}/netbox/venv"
@@ -261,6 +261,9 @@
   ansible.builtin.template:
     src: netbox.service
     dest: /etc/systemd/system/netbox.service
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
   notify:
     - restart netbox
 
@@ -268,6 +271,9 @@
   ansible.builtin.template:
     src: netbox-rq.service
     dest: /etc/systemd/system/netbox-rq.service
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
   notify:
     - restart netbox-rq
 
