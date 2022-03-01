@@ -288,9 +288,8 @@
     - netbox-rq
 
 - name: Add netbox housekeeping executable
-  ansible.builtin.copy:
-    src: "{{ netbox_root }}/netbox/contrib/netbox-housekeeping.sh"
-    remote_src: true
+  ansible.builtin.template:
+    src: netbox-housekeeping.sh
     dest: "{{ netbox_root }}/netbox/netbox-housekeeping.sh"
     owner: root
     group: root
