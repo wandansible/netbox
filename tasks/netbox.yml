@@ -106,7 +106,6 @@
     owner: nobody
     group: nogroup
     mode: u=rwx,g=rx,o=rx
-  register: _netbox_venv
 
 - name: Create netbox python virtual environment  # noqa package-latest
   ansible.builtin.pip:
@@ -114,9 +113,6 @@
     virtualenv: "{{ netbox_root }}/netbox/venv"
     virtualenv_command: /usr/bin/python3 -m venv
     state: latest
-  when:
-    - _netbox_venv.diff.before.state is defined
-    - _netbox_venv.diff.before.state == "absent"
   become: true
   become_user: nobody
 
