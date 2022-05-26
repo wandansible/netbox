@@ -196,7 +196,7 @@
       become: true
       become_user: nobody
 
-- name: Netbox upgrade block
+- name: Netbox upgrade block  # noqa no-handler
   when: _netbox_current_version.changed
   block:
     - name: Apply any netbox database migrations
