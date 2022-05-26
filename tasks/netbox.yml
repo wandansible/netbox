@@ -99,7 +99,7 @@
     mode: u=rw,g=r,o=r
   loop: "{{ netbox_scripts }}"
 
-- name: Create netbox python virtual environment
+- name: Create netbox python virtual environment directory
   ansible.builtin.file:
     path: "{{ netbox_root }}/netbox/venv"
     state: directory
