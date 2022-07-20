@@ -1,8 +1,8 @@
 ---
 postgresql_user: "postgres"
 
-netbox_version: 3.2.3
-netbox_checksum: 78fc3cac957f9d5a671301e0146d0cc8664231e4852774d41b1a17ac20dcf65f
+netbox_version: 3.2.7
+netbox_checksum: 90a61fbd7d3b8a9890cc87bf80e33f110424c409ad200a3fff374b63e0fd10c8
 netbox_checksum_type: sha256
 netbox_listen: "localhost:8001"
 netbox_root: "/opt/netbox"
