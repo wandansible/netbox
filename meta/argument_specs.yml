@@ -1,0 +1,348 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure Netbox
+    description: |
+      Install and configure NetBox and create a PostgreSQL database for NetBox.
+      This role will also upgrade NetBox when a new version is selected.
+      It is recommended to stop the netbox.service, netbox-rq.service
+      and netbox-housekeeping.timer systemd units, and
+      backup the database before upgrading NetBox.
+    options:
+      postgresql_user:
+        description: Name of the postgresql unix user
+        type: str
+        default: postgres
+
+      netbox_version:
+        description: Version to download and install
+        type: str
+
+      netbox_checksum:
+        description: Checksum of the tarball download
+        type: str
+
+      netbox_checksum_type:
+        description: Checksum type of netbox_checksum
+        type: str
+        default: sha256
+
+      netbox_listen:
+        description: Listen address and port
+        type: str
+        default: localhost:8001
+
+      netbox_root:
+        description: Netbox install directory
+        type: str
+        default: /opt/netbox
+
+      netbox_packages:
+        description: List of packages to install
+        type: list
+        elements: str
+        default:
+          - python3-pip
+          - python3-venv
+          - python3-dev
+          - build-essential
+          - libxml2-dev
+          - libxslt1-dev
+          - libffi-dev
+          - libpq-dev
+          - libssl-dev
+          - zlib1g-dev
+
+      netbox_user:
+        description: Name for the netbox unix user
+        type: str
+        default: netbox
+
+      netbox_group:
+        description: Name for the netbox unix group
+        type: str
+        default: netbox
+
+      netbox_database:
+        description: Name for the netbox postgresql database
+        type: str
+        default: netbox
+
+      netbox_database_user:
+        description: Name for the netbox postgresql user
+        type: str
+        default: netbox
+
+      netbox_database_password:
+        description: |
+          Password for the netbox postgresql user.
+          If defined, the password will be set for the netbox postgresql user
+          and database connections are created via TCP to netbox_database_host.
+          Otherwise, database connections are created via the postgresql unix socket
+          (netbox_database_socket).
+        type: str
+
+      netbox_database_host:
+        description: Hostname for postgresql connections
+        type: str
+        default: localhost
+
+      netbox_database_port:
+        description: Port for postgresql connections
+        type: int
+        default: 5432
+
+      netbox_database_socket:
+        description: Path to postgresql unix socket
+        type: str
+        default: /var/run/postgresql
+
+      netbox_database_conn_max_age:
+        description: Max postgresql database connection age in seconds
+        type: int
+        default: 300
+
+      netbox_redis_host:
+        description: Redis server hostname for task queuing
+        type: str
+        default: localhost
+
+      netbox_redis_port:
+        description: Redis server port for task queuing
+        type: int
+        default: 6379
+
+      netbox_redis_password:
+        description: |
+          Password for authentication with redis for task queuing.
+          Set this to an empty string for no password.
+        type: str
+        required: true
+
+      netbox_redis_database:
+        description: Redis database ID for task queuing
+        type: int
+        default: 0
+
+      netbox_redis_default_timeout:
+        description: Default redis connection timeout, in seconds, for task queuing
+        type: int
+        default: 300
+
+      netbox_redis_ssl:
+        description: If true, connect to redis server over SSL for task queuing
+        type: bool
+        default: false
+
+      netbox_redis_cache_host:
+        description: Redis server hostname for caching
+        type: str
+        default: localhost
+
+      netbox_redis_cache_port:
+        description: Redis server port for caching
+        type: int
+        default: 6379
+
+      netbox_redis_cache_password:
+        description: |
+          Password for authentication with redis for caching.
+          Set this to an empty string for no password.
+          Defaults to netbox_redis_password.
+        type: str
+
+      netbox_redis_cache_database:
+        description: Redis database ID for caching
+        type: int
+        default: 1
+
+      netbox_redis_cache_default_timeout:
+        description: Default redis connection timeout, in seconds, for caching
+        type: int
+        default: 300
+
+      netbox_redis_cache_ssl:
+        description: If true, connect to redis server over SSL for caching
+        type: bool
+        default: false
+
+      netbox_secret_key:
+        description: |
+          Random string used to assist in creating
+          cryptographic hashes for passwords and HTTP cookies,
+          see https://docs.netbox.dev/en/stable/configuration/required-parameters/#secret_key
+        type: str
+        required: true
+
+      netbox_venv_python_packages:
+        description: List of python packages to upgrade in the virtual environment
+        type: list
+        elements: str
+        default:
+          - pip
+          - setuptools
+          - wheel
+
+      netbox_ldap_enabled:
+        description: If true, enable LDAP authentication for netbox
+        type: bool
+        default: false
+
+      netbox_ldap_template:
+        description: Template file for LDAP configuration
+        type: str
+        default: ldap_config.py
+
+      netbox_ldap_packages:
+        description: List of packages to install for LDAP
+        type: list
+        elements: str
+        default:
+          - libldap2-dev
+          - libsasl2-dev
+          - libssl-dev
+
+      netbox_ldap_python_packages:
+        description: List of python packages to install for LDAP
+        type: list
+        elements: str
+        default:
+          - django-auth-ldap
+
+      netbox_ldap_imports:
+        description: |
+          List of extra python functions to import
+          from django_auth_ldap.config in LDAP configuration
+        type: list
+        elements: str
+
+      netbox_ldap_extra_imports:
+        description: Python code for extra python imports in LDAP configuration
+        type: str
+
+      netbox_ldap_scheme:
+        description: URI scheme for LDAP connections
+        type: str
+        default: ldaps
+
+      netbox_ldap_host:
+        description: LDAP server hostname
+        type: str
+
+      netbox_ldap_port:
+        description: LDAP server port
+        type: int
+        default: 636
+
+      netbox_ldap_config:
+        description: |
+          Python code for LDAP configuration,
+          excluding imports and
+          URI for LDAP (AUTH_LDAP_SERVER_URI).
+          For configuration options see:
+          https://docs.netbox.dev/en/stable/installation/6-ldap/#configuration.
+        type: str
+
+      netbox_napalm_enabled:
+        description: If true, enable NAPALM
+        type: bool
+        default: false
+
+      netbox_napalm_python_packages:
+        description: List of python packages to install for NAPALM
+        type: list
+        elements: str
+        default:
+          - napalm
+
+      netbox_config:
+        description: Extra netbox configuration
+        type: dict
+
+      netbox_media_root:
+        description: Directory for netbox media
+        type: str
+        default: /var/lib/netbox/media
+
+      netbox_reports:
+        description: List of template files for custom report scripts
+        type: list
+        elements: str
+
+      netbox_reports_root:
+        description: Directory for custom report scripts
+        type: str
+        default: /opt/netbox/netbox/netbox/reports
+
+      netbox_scripts:
+        description: List of template files for custom scripts
+        type: list
+        elements: str
+
+      netbox_scripts_root:
+        description: Directory for custom scripts
+        type: str
+        default: /opt/netbox/netbox/netbox/scripts
+
+      netbox_allowed_hosts:
+        description: |
+          List of valid fully-qualified domain names (FQDNs)
+          and/or IP addresses that can be used to reach the netbox service,
+          usually set to the hostname of the server
+        type: list
+        elements: str
+        default:
+          - localhost
+
+      netbox_wsgi_workers:
+        description: |
+          Number of WSGI worker processes for handling requests,
+          defaults to the number of threads on the host
+        type: int
+
+      netbox_wsgi_threads:
+        description: Number of threads per WSGI workers
+        type: int
+        default: 3
+
+      netbox_wsgi_timeout:
+        description: Timeout, in seconds, for WSGI workers
+        type: int
+        default: 120
+
+      netbox_wsgi_max_requests:
+        description: Max number of requests a WSGI worker will process before restarting
+        type: int
+        default: 5000
+
+      netbox_wsgi_max_requests_jitter:
+        description: Max jitter to add to the netbox_wsgi_max_requests setting
+        type: int
+        default: 500
+
+      netbox_wsgi_extra:
+        description: Extra gunicorn configuration
+        type: dict
+
+      netbox_housekeeping_time:
+        description: |
+          Time for running housekeeping in
+          the systemd calendar event format, see
+          https://www.freedesktop.org/software/systemd/man/systemd.time.html#Calendar%20Events
+        type: str
+        default: Mon..Sun 01:00
+
+      netbox_superuser_username:
+        description: Username for the superuser
+        type: str
+        default: netbox
+
+      netbox_superuser_password:
+        description: |
+          Password for the superuser,
+          if left empty the superuser is not created
+        type: str
+
+      netbox_superuser_email:
+        description: Email for the superuser
+        type: str
