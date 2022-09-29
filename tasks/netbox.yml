@@ -242,6 +242,26 @@
       become: true
       become_user: "{{ netbox_user }}"
 
+- name: Create netbox superuser
+  community.general.django_manage:
+    app_path: "{{ netbox_root }}/netbox/netbox"
+    virtualenv: "{{ netbox_root }}/netbox/venv"
+    command: createsuperuser --no-input
+  environment:
+    DJANGO_SUPERUSER_USERNAME: "{{ netbox_superuser_username }}"
+    DJANGO_SUPERUSER_PASSWORD: "{{ netbox_superuser_password }}"
+    DJANGO_SUPERUSER_EMAIL: "{{ netbox_superuser_email }}"
+  become: true
+  become_user: "{{ netbox_user }}"
+  register: _netbox_createsuperuser
+  failed_when:
+    - _netbox_createsuperuser.msg is defined
+    - "'That username is already taken' not in _netbox_createsuperuser.msg"
+  changed_when:
+    - _netbox_createsuperuser.out is defined
+    - "'Superuser created successfully' in _netbox_createsuperuser.out"
+  when: netbox_superuser_password != ""
+
 - name: Configure gunicorn
   ansible.builtin.template:
     src: gunicorn.py
