@@ -81,6 +81,15 @@
     - "{{ netbox_reports_root }}"
     - "{{ netbox_scripts_root }}"
 
+- name: Create netbox log directory
+  ansible.builtin.file:
+    path: "{{ netbox_log_dir }}"
+    owner: "{{ netbox_user }}"
+    group: "{{ netbox_group }}"
+    mode: u=rwx,g=rx,o=
+    state: directory
+  when: netbox_log_dir != ""
+
 - name: Deploy netbox reports
   ansible.builtin.template:
     src: "{{ item }}"

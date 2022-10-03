@@ -86,3 +86,5 @@ netbox_housekeeping_time: "Mon..Sun 01:00"
 netbox_superuser_username: netbox
 netbox_superuser_password: ""
 netbox_superuser_email: "{{ netbox_superuser_username }}@{{ inventory_hostname }}"
+
+netbox_log_dir: /var/log/netbox

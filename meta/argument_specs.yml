@@ -346,3 +346,8 @@ argument_specs:
       netbox_superuser_email:
         description: Email for the superuser
         type: str
+
+      netbox_log_dir:
+        description: Path for log directory
+        type: str
+        default: /var/log/netbox
