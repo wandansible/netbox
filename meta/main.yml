@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  namespace: wandansible
+  role_name: netbox
+  author: WAND Network Research Group
+  description: Install and configure Netbox
+
+  license: Apache-2.0
+
+  min_ansible_version: "2.10"
+
+  platforms:
+    - name: Debian
+      versions:
+        - bullseye
+    - name: Ubuntu
+      versions:
+        - focal
+
+  galaxy_tags: []
+
+dependencies: []

@@ -1,0 +1,7 @@
+---
+- name: Prepare
+  hosts: all
+  tasks:
+    - name: "Install postgresql"
+      ansible.builtin.include_role:
+        name: "geerlingguy.postgresql"

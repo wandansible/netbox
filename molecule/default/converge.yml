@@ -1,0 +1,10 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include wandansible.netbox"
+      ansible.builtin.include_role:
+        name: "wandansible.netbox"
+      vars:
+        netbox_redis_password: "password"
+        netbox_secret_key: "secret_key"
