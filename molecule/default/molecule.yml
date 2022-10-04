@@ -1,0 +1,20 @@
+---
+dependency:
+  name: galaxy
+  options:
+    role-file: molecule/test-requirements.yml
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: ${MOLECULE_DOCKER_IMAGE:-ubuntu:latest}
+    pre_build_image: false
+    override_command: false
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+provisioner:
+  name: ansible
+  log: true
+verifier:
+  name: ansible

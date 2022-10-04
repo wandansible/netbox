@@ -1,0 +1,43 @@
+---
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  generate-matrix:
+    name: Generate matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - name: Generate matrix
+        id: generate-matrix
+        uses: wanduow/action-distro-release-matrix@v1
+
+  molecule:
+    name: Molecule
+    runs-on: ubuntu-latest
+    needs: generate-matrix
+    continue-on-error: true
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+        exclude:
+          - target: "debian:buster"
+          - target: "ubuntu:bionic"
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install test dependencies
+        run: pip3 install -r test-requirements.txt
+      - name: Run molecule
+        run: molecule test
+        env:
+          MOLECULE_DOCKER_IMAGE: ${{ matrix.target }}
