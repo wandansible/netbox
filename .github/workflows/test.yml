@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Generate matrix
         id: generate-matrix
-        uses: wanduow/action-distro-release-matrix@v1
+        uses: wandnz/action-supported-distro-releases@v1
 
   molecule:
     name: Molecule
